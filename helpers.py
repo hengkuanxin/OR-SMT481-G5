@@ -16,7 +16,7 @@ def get_manhattan_stations():
                 'capacity': int(row[2]),
                 'lng': float(row[3]),
                 'lat': float(row[4]),
-                'demand_level': row[9]
+                'demand_level': row[8]
             }
 
     return stations_dict

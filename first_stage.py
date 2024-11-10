@@ -12,12 +12,14 @@ stations_dict = add_benefit_score(data)
 # print(stations_dict)
 
 # Step 1: Define the model
-model = pulp.LpProblem("Bike_Redistribution_Optimization", pulp.LpMinimize)
+model = pulp.LpProblem("Bike_Redistribution_Optimization", pulp.LpMaximize)
 
 # Step 2: Define constants and parameters
-num_stations = 605  # Total number of stations (0 to 612)
-c_unit = 5  # Cost per bike moved (TBC)
+num_stations = 662  # Total number of stations (0 to 612)
+c_unit = 3  # Unit cost to relocate a bike
 M = 100000  # Large constant for big-M constraint
+e = 0.00001 # Small constant for strictly positive constraint (for w)
+F = 37369 # Total number of bikes in the fleet (as of Sep 2024)
 
 b = [stations_dict[k]['benefit_value'] for k in stations_dict]  # Benefit per bike at each station
 C = [stations_dict[k]['capacity'] for k in stations_dict]  # Capacity of each station
@@ -27,40 +29,45 @@ print("Benefit", b[:10])
 print("Capacity", C[:10])
 print("Current number of bikes", n[:10])
 
-# # Step 3: Define decision variables
-# x = pulp.LpVariable.dicts("x", range(num_stations), lowBound=0, cat='Integer')
-# m = pulp.LpVariable.dicts("m", range(num_stations), lowBound=0, cat='Continuous')
-# w = pulp.LpVariable("w", cat='Binary')
+# Step 3: Define decision variables
+x = pulp.LpVariable.dicts("x", range(num_stations), lowBound=0, cat='Integer')
+abs = pulp.LpVariable.dicts("abs", range(num_stations), lowBound=0, cat='Integer')
+w = pulp.LpVariable("w", cat='Binary')
 
-# # Step 4: Define the objective function
-# model += pulp.lpSum([c_unit * m[i] for i in range(num_stations)]) - pulp.lpSum([b[i] * x[i] for i in range(num_stations)])
+# Step 4: Define the objective function
+model += pulp.lpSum([b[i] * x[i] for i in range(num_stations)]) - pulp.lpSum([c_unit * abs[i] for i in range(num_stations)])
 
-# # Step 5: Define the constraints
+# Step 5: Define the constraints
+# Capacity constraint: x_i <= C_i for all stations
+for i in range(num_stations):
+    model += x[i] <= C[i]
 
-# # Capacity constraint: x_i <= C_i for all stations
-# for i in range(num_stations):
-#     model += x[i] <= C[i]
+# Absolute value constraint: abs_i >= |x_i - n_i|
+for i in range(num_stations):
+    model += abs[i] >= x[i] - n[i]
+    model += abs[i] >= n[i] - x[i]
 
-# # Absolute value constraint: m_i >= |x_i - n_i|
-# for i in range(num_stations):
-#     model += m[i] >= x[i] - n[i]
-#     model += m[i] >= n[i] - x[i]
+# Fleet size constraint:
+model += pulp.lpSum([x[i] for i in range(num_stations)]) <= F
 
-# # Big-M constraint to determine the value of w
-# model += pulp.lpSum([c_unit * m[i] for i in range(num_stations)]) - \
-#          pulp.lpSum([b[i] * x[i] for i in range(num_stations)]) <= M * (1 - w)
+# Big-M constraints to determine the value of w:
+model += pulp.lpSum([b[i] * x[i] for i in range(num_stations)]) - \
+         pulp.lpSum([c_unit * abs[i] for i in range(num_stations)]) >= e - M * (1 - w)
 
+model += pulp.lpSum([b[i] * x[i] for i in range(num_stations)]) - \
+         pulp.lpSum([c_unit * abs[i] for i in range(num_stations)]) <= -e + (M * w)
 
-# # Step 6: Solve the model
-# model.solve()
+# Step 6: Solve the model
+solver = pulp.PULP_CBC_CMD(timeLimit=300, gapRel=0.01) # Times out the solver within 300ms and accepts solutions within 1% of the optimal solution
+model.solve(solver)
 
-# # Step 7: Output the results
-# print("Status:", pulp.LpStatus[model.status])
-# print("Optimal Total Cost:", pulp.value(model.objective))
-# print(f"Should redistribute? {'Yes' if w.value() == 1 else 'No'}")
+# Step 7: Output the results
+print("Status:", pulp.LpStatus[model.status])
+print("Calculated Net Benefit:", pulp.value(model.objective))
+print(f"Should redistribute? {'Yes' if w.value() == 1 else 'No'}")
 
-# # Print optimal bike allocations if redistribution happens
-# if w.value() == 1:
-#     print("Optimal bike allocations:")
-#     for i in range(num_stations):
-#         print(f"Station {i}: Allocate {x[i].value()} bikes")
+# Print optimal bike allocations if redistribution happens
+if w.value() == 1:
+    print("Optimal bike allocations:")
+    for i in range(num_stations):
+        print(f"Station {i}: Allocate {x[i].value()} bikes")

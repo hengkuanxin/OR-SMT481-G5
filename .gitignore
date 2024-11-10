@@ -11,3 +11,6 @@ __pycache__
 # Jupyter Notebook checkpoint files
 .ipynb_checkpoints
 */.ipynb_checkpoints/*
+
+# Data directory
+data/

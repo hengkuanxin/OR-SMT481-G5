@@ -19,7 +19,7 @@ num_stations = 662  # Total number of stations (0 to 612)
 c_unit = 3  # Unit cost to relocate a bike
 M = 100000  # Large constant for big-M constraint
 e = 0.00001 # Small constant for strictly positive constraint (for w)
-F = 37369 # Total number of bikes in the fleet (as of Sep 2024)
+F = 12918 # Total number of bikes in the Manhattan operating fleet (as of Sep 2024)
 
 b = [stations_dict[k]['benefit_value'] for k in stations_dict]  # Benefit per bike at each station
 C = [stations_dict[k]['capacity'] for k in stations_dict]  # Capacity of each station

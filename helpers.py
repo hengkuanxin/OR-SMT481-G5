@@ -23,10 +23,10 @@ def get_manhattan_stations():
 
 def add_benefit_score(stations_dict):
     benefit_values = {
-        'Lowest': 5.965713516563833,
-        'Low': 5.8684194073530325,
-        'Medium': 5.816980433485934,
-        'Highest': 5.79309663001927
+        'Lowest': 9.82,
+        'Low': 9.86,
+        'Medium': 9.88,
+        'Highest': 9.88
     }
 
     for k in stations_dict:

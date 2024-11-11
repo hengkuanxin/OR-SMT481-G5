@@ -1,10 +1,22 @@
 import pulp
+import pandas as pd
 from random import randint
 from helpers import get_manhattan_stations, add_benefit_score
 
-def first_stage():
-    data = get_manhattan_stations()    
+def first_stage(currentStations):
+    data = {}
+    for i, row in currentStations.iterrows():
+        data[i] = {
+            'station_name': row['station_name'],
+            'capacity': int(row['capacity']),
+            'lng': float(row['lng']),
+            'lat': float(row['lat']),
+            'demand_level': row['DEMAND_CATEGORY'],
+            'current_bikes':int(row['current_bikes'])
+        }
+        
     stations_dict = add_benefit_score(data)
+    
     # print(len(stations_dict))
     # print(stations_dict)
 
@@ -16,11 +28,11 @@ def first_stage():
     c_unit = 3  # Unit cost to relocate a bike
     M = 100000  # Large constant for big-M constraint
     e = 0.00001 # Small constant for strictly positive constraint (for w)
-    F = 37369 # Total number of bikes in the fleet (as of Sep 2024)
+    F = int(662/1915 * 37369) # Total number of bikes in fleet of Manhatten (as of Sep 2024)
 
     b = [stations_dict[k]['benefit_value'] for k in stations_dict]  # Benefit per bike at each station
     C = [stations_dict[k]['capacity'] for k in stations_dict]  # Capacity of each station
-    n = [randint(0, cap) for cap in C]  # Current number of bikes at each station (example)
+    n = [stations_dict[k]['current_bikes'] for k in stations_dict]  # Current number of bikes at each station (example)
 
     # print("Benefit", b[:10])
     # print("Capacity", C[:10])

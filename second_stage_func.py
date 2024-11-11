@@ -38,10 +38,10 @@ def second_stage(current_station):
     Ci = stations["capacity"]  # Capacity for each station
     Di = stations["DEMAND"]
     weather_factors = {
-        "Cloudy": 0.8, 
-        "Rainy": 1.2, 
+        "Cloudy": 1.41, 
+        "Rainy": 1.15, 
         "Sunny": 1.0, 
-        "Clear": 0.9
+        "Clear": 1.61
     }
 
     # Decision Variables
